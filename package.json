@@ -1,4 +1,3 @@
-
 {
   "name": "api",
   "version": "1.0.0",
@@ -13,6 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@vercel/node": "^20.0.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.6",

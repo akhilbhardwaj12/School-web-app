@@ -1,5 +1,10 @@
 // =====================================================
-// School Management System - Vercel API Server
+// School Management System - API Server
+// Vercel Serverless Configuration
+// =====================================================
+
+// =====================================================
+// Environment Variables
 // =====================================================
 
 require("dotenv").config();
@@ -63,17 +68,24 @@ app.use(
 );
 
 // =====================================================
-// Database Middleware
+// Database Connection Middleware
 // =====================================================
+
+let dbConnected = false;
 
 app.use(async (req, res, next) => {
     try {
-        await connectDB();
+        if (!dbConnected) {
+            await connectDB();
+            dbConnected = true;
+            console.log("MongoDB connected successfully");
+        }
+
         next();
     } catch (error) {
         console.error("MongoDB connection failed:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Database connection failed",
             error: error.message,
@@ -89,6 +101,23 @@ app.get("/", (req, res) => {
     res.status(200).json({
         success: true,
         message: "School Management API is running",
+    });
+});
+
+// =====================================================
+// Health Check
+// =====================================================
+
+app.get("/api", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "School Management API is running",
+        routes: {
+            students: "/api/students",
+            teachers: "/api/teachers",
+            classes: "/api/classes",
+            attendance: "/api/attendance",
+        },
     });
 });
 
@@ -141,8 +170,23 @@ app.use((err, req, res, next) => {
 });
 
 // =====================================================
-// IMPORTANT FOR VERCEL
-// Do NOT use app.listen()
+// Local Server + Vercel
+// =====================================================
+
+const PORT = process.env.PORT || 5000;
+
+// Start server only when running directly with Node.js
+// Vercel will use module.exports instead.
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(
+            `Server running on http://localhost:${PORT}`
+        );
+    });
+}
+
+// =====================================================
+// Export Express App for Vercel
 // =====================================================
 
 module.exports = app;
