@@ -1,10 +1,5 @@
 // =====================================================
-// School Management System - API Server
-// Vercel Serverless Configuration
-// =====================================================
-
-// =====================================================
-// Environment Variables
+// School Management System - Vercel API Server
 // =====================================================
 
 require("dotenv").config();
@@ -54,8 +49,18 @@ const app = express();
 app.use(
     cors({
         origin: "*",
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS",
+        ],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+        ],
     })
 );
 
@@ -68,22 +73,28 @@ app.use(
 );
 
 // =====================================================
-// Database Connection Middleware
+// Database Connection
 // =====================================================
 
-let dbConnected = false;
+let dbPromise = null;
+
+const ensureDatabase = async () => {
+    if (!dbPromise) {
+        dbPromise = connectDB();
+    }
+
+    return dbPromise;
+};
 
 app.use(async (req, res, next) => {
     try {
-        if (!dbConnected) {
-            await connectDB();
-            dbConnected = true;
-            console.log("MongoDB connected successfully");
-        }
-
+        await ensureDatabase();
         next();
     } catch (error) {
-        console.error("MongoDB connection failed:", error);
+        console.error(
+            "MongoDB connection failed:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -105,7 +116,7 @@ app.get("/", (req, res) => {
 });
 
 // =====================================================
-// Health Check
+// API Health Check
 // =====================================================
 
 app.get("/api", (req, res) => {
@@ -125,25 +136,37 @@ app.get("/api", (req, res) => {
 // Student Routes
 // =====================================================
 
-app.use("/api/students", studentRoutes);
+app.use(
+    "/api/students",
+    studentRoutes
+);
 
 // =====================================================
 // Teacher Routes
 // =====================================================
 
-app.use("/api/teachers", teacherRoutes);
+app.use(
+    "/api/teachers",
+    teacherRoutes
+);
 
 // =====================================================
 // Class Routes
 // =====================================================
 
-app.use("/api/classes", classRoutes);
+app.use(
+    "/api/classes",
+    classRoutes
+);
 
 // =====================================================
 // Attendance Routes
 // =====================================================
 
-app.use("/api/attendance", attendanceRoutes);
+app.use(
+    "/api/attendance",
+    attendanceRoutes
+);
 
 // =====================================================
 // 404 Handler
@@ -161,32 +184,25 @@ app.use((req, res) => {
 // =====================================================
 
 app.use((err, req, res, next) => {
-    console.error("Server Error:", err);
+    console.error(
+        "Server Error:",
+        err
+    );
 
-    res.status(err.statusCode || 500).json({
+    res.status(
+        err.statusCode || 500
+    ).json({
         success: false,
-        message: err.message || "Internal Server Error",
+        message:
+            err.message ||
+            "Internal Server Error",
     });
 });
 
 // =====================================================
-// Local Server + Vercel
-// =====================================================
-
-const PORT = process.env.PORT || 5000;
-
-// Start server only when running directly with Node.js
-// Vercel will use module.exports instead.
-if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(
-            `Server running on http://localhost:${PORT}`
-        );
-    });
-}
-
-// =====================================================
-// Export Express App for Vercel
+// IMPORTANT
+// Vercel Serverless Function
+// Do NOT use app.listen()
 // =====================================================
 
 module.exports = app;
