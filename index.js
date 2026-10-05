@@ -1,9 +1,11 @@
 // =====================================================
-// School Management System - API Server
+// School Management System - Vercel API Server
 // =====================================================
 
+require("dotenv").config();
+
 // =====================================================
-// REGISTER MONGOOSE MODELS
+// Register Mongoose Models
 // =====================================================
 
 require("./src/models/user.model.js");
@@ -11,12 +13,6 @@ require("./src/models/class.model.js");
 require("./src/models/guardian.model.js");
 require("./src/models/student.model.js");
 require("./src/models/teacher.model.js");
-
-// =====================================================
-// Environment Variables
-// =====================================================
-
-require("dotenv").config();
 
 // =====================================================
 // Dependencies
@@ -52,20 +48,9 @@ const app = express();
 
 app.use(
     cors({
-        origin: true,
-        credentials: true,
-        methods: [
-            "GET",
-            "POST",
-            "PUT",
-            "PATCH",
-            "DELETE",
-            "OPTIONS",
-        ],
-        allowedHeaders: [
-            "Content-Type",
-            "Authorization",
-        ],
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
 
@@ -78,30 +63,26 @@ app.use(
 );
 
 // =====================================================
-// DATABASE MIDDLEWARE
+// Database Middleware
 // =====================================================
-// Vercel runs this Express app as a serverless function.
-// MongoDB connection is established before API requests.
 
-app.use("/api", async (req, res, next) => {
+app.use(async (req, res, next) => {
     try {
         await connectDB();
         next();
     } catch (error) {
-        console.error(
-            "Database connection failed:",
-            error.message
-        );
+        console.error("MongoDB connection failed:", error);
 
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
             message: "Database connection failed",
+            error: error.message,
         });
     }
 });
 
 // =====================================================
-// ROOT / TEST ROUTE
+// Test Route
 // =====================================================
 
 app.get("/", (req, res) => {
@@ -112,61 +93,31 @@ app.get("/", (req, res) => {
 });
 
 // =====================================================
-// API HEALTH CHECK
+// Student Routes
 // =====================================================
 
-app.get("/api/health", async (req, res) => {
-    try {
-        return res.status(200).json({
-            success: true,
-            message: "School Management API is healthy",
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-});
+app.use("/api/students", studentRoutes);
 
 // =====================================================
-// STUDENT ROUTES
+// Teacher Routes
 // =====================================================
 
-app.use(
-    "/api/students",
-    studentRoutes
-);
+app.use("/api/teachers", teacherRoutes);
 
 // =====================================================
-// TEACHER ROUTES
+// Class Routes
 // =====================================================
 
-app.use(
-    "/api/teachers",
-    teacherRoutes
-);
+app.use("/api/classes", classRoutes);
 
 // =====================================================
-// CLASS ROUTES
+// Attendance Routes
 // =====================================================
 
-app.use(
-    "/api/classes",
-    classRoutes
-);
+app.use("/api/attendance", attendanceRoutes);
 
 // =====================================================
-// ATTENDANCE ROUTES
-// =====================================================
-
-app.use(
-    "/api/attendance",
-    attendanceRoutes
-);
-
-// =====================================================
-// 404 HANDLER
+// 404 Handler
 // =====================================================
 
 app.use((req, res) => {
@@ -177,65 +128,21 @@ app.use((req, res) => {
 });
 
 // =====================================================
-// ERROR HANDLER
+// Error Handler
 // =====================================================
 
-app.use(
-    (err, req, res, next) => {
-        console.error(
-            "Server Error:",
-            err
-        );
+app.use((err, req, res, next) => {
+    console.error("Server Error:", err);
 
-        res.status(
-            err.statusCode || 500
-        ).json({
-            success: false,
-            message:
-                err.message ||
-                "Internal Server Error",
-        });
-    }
-);
+    res.status(err.statusCode || 500).json({
+        success: false,
+        message: err.message || "Internal Server Error",
+    });
+});
 
 // =====================================================
-// EXPORT APP FOR VERCEL
+// IMPORTANT FOR VERCEL
+// Do NOT use app.listen()
 // =====================================================
 
 module.exports = app;
-
-// =====================================================
-// LOCAL DEVELOPMENT SERVER
-// =====================================================
-
-if (require.main === module) {
-
-    const PORT =
-        process.env.PORT || 5000;
-
-    connectDB()
-        .then(() => {
-
-            app.listen(
-                PORT,
-                () => {
-
-                    console.log(
-                        `Server running on http://localhost:${PORT}`
-                    );
-
-                }
-            );
-
-        })
-        .catch((error) => {
-
-            console.error(
-                "Server startup failed:",
-                error.message
-            );
-
-            process.exit(1);
-
-        });
-}

@@ -1,0 +1,15 @@
+const {Schema, model} = require('mongoose');
+
+const assignmentSchema = new Schema({
+    assignmentName: {type: String, required: true, trim: true, maxlength: [50, 'assignmentname must be less than  50 characters']},
+    assignmentDescription: {type: String, required: true, trim: true, maxlength: [500, 'assignmentDescrption must be less than 500 characters']},
+    assignmentType: {type: String, enum: ['Assignment', 'Quiz', 'Exam', 'other'], default: 'Assignment'},
+    assignmentScore: {type: Number, min: 0, max:100, default:0},
+    assignmentStatus: {type: String, enum: ['Active', 'Inactive'], default: 'Active'},
+    assignmentCoverImage: {type: String, default:'',maxlength:[200,'Assignment cover image must be less than 200 characters']},
+    assignmentIsActive: {type: Boolean, default: true,},
+
+}, {timestamps: true});
+
+const AssignmentModel = model('Assignment', assignmentSchema);
+module.exports = AssignmentModel;
